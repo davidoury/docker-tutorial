@@ -26,6 +26,11 @@ in order to use the containers you run there. To obtain its IP address run:
 docker-machine ip default
 ```
 
+For details on the `docker-machine` command see:
+
+- https://docs.docker.com/machine/get-started/
+- https://docs.docker.com/machine
+
 ### Starting Docker on Windows
 
 Run the Docker Quickstart Terminal, which will start 
@@ -76,18 +81,184 @@ can be specified there.
 When you exit the shell the container will stop running 
 and all changes you have made, while using the shell, will vanish. 
 
-The two parameters are required in this case (when you are running a shell). 
-The `--tty=true` parameter allocates a pseudo-TTY.
-The `--interactive` parameter keeps a standard tty open. 
-They can be abbreviated with `-ti`.
+The two parameters are required when you are running a shell: 
+
+- `--tty=true` allocates a pseudo-TTY
+- `--interactive` keeps a standard tty open
+
+They can be abbreviated as `-ti`.
 
 The `docker run` command has many parameters. 
-See [the documentation](https://docs.docker.com/v1.8/reference/commandline/run/).
+See the documentation:
 
+- https://docs.docker.com/v1.8/reference/commandline/run/
+- https://docs.docker.com/engine/reference/run/
 
 
 ## Docker Hub
 
-https://hub.docker.com
+Many containers are available on the Docker Hub. See 
 
+> https://hub.docker.com
 
+Find the search field at the top of the page. 
+
+## Building containers 
+
+Set your current directory to the `mybuild` subdirectory of 
+the `docker-tutorial` directory created by the `git clone` command
+and run: 
+```
+$ ls
+$ cat Dockerfile
+```
+The file `Dockerfile` is used to configure containers (to build). 
+Every such file starts with a `FROM` line that specifies the base container. 
+Additional lines add to or modify that base container. 
+
+To start, build a container whose base is `ubuntu:14.04` container with the command:
+```
+$ docker build -t mynametag .
+Sending build context to Docker daemon 3.584 kB
+Step 1 : FROM ubuntu:14.04
+ ---> 8f1bd21bd25c
+Successfully built 8f1bd21bd25c
+```
+The output from the command is included above. 
+
+Run this container with the following command
+```
+$ docker run --interactive --tty=true mynametag bash
+```
+which is nearly identical to the two `docker run` commands in the previous section, 
+except for the name of the image to run. 
+
+You can run any command available to the container. Try:
+```
+$ docker run mynametag cat /etc/hosts
+```
+
+To list the images you have created and retrieved run:
+```
+$ docker images
+```
+Images can be deleted with the command:
+```
+$ docker rmi --force hello-world
+```
+I've never been able to delete an image without using the `--force` option.
+
+Confirm that this worked as expected with:
+```
+$ docker images
+```
+
+## Dockerfile
+
+The use of several Dockerfile directives are described below. 
+
+### RUN directive
+
+Run the following to add a command to `Dockerfile`.
+```
+echo "RUN echo hello > /tmp/world" >> Dockerfile`
+```
+Rebuild the image.
+```
+$ docker build -t mynametag .
+```
+Run a bash shell in the container
+```
+$ docker run --interactive --tty=true mynametag bash
+``` 
+and then check `/tmp/world` and stop the container. 
+```
+$ cat /tmp/world
+$ exit
+```
+
+### ENV directive 
+
+You can create and access environment variables.
+Add two more commands to `Dockerfile`.
+```
+echo "ENV MYFILE /tmp/world" >> Dockerfile
+echo 'RUN mv "${MYFILE}" /tmp/world.save' >> Dockerfile
+```
+Rebuild the image and run bash in the container.
+```
+$ docker build -t mynametag .
+$ docker run --interactive --tty=true mynametag bash
+```
+Now check for the renamed file. 
+```
+$ ls /tmp
+$ exit
+```
+
+### ADD directive
+
+Files can be moved from the build directory (currently `mybuild`) into the container filesystem.
+Add these two commands to `Dockerfile`, build and then run the image. 
+```
+$ echo "ADD testdir.tgz /tmp" >> Dockerfile
+$ echo "ADD testdir/file1 /tmp" >> Dockerfile
+$ docker build -t mynametag .
+$ docker run --interactive --tty=true mynametag bash
+```
+Now check for the directory `testdir` and the file `file1` in `/tmp`.
+```
+$ ls /tmp
+$ exit
+```
+
+### CMD directive, detached containers, stopping containers
+
+The `CMD` directive provides a default command to run if none is specified. 
+Add this command to `Dockerfile` and rebuild the container.
+```
+$ echo "CMD sleep 10; ls /tmp" >> Dockerfile
+$ docker build -t mynametag .
+```
+Now run the container, omitting the `--interactive` and `--tty` parameters.
+```
+$ docker run mynametag
+```
+Now run the container after adding the parameter `--detach=true`. 
+Then immediately run the `docker ps` command. 
+```
+$ docker run --detach=true mynametag 
+$ docker ps
+```
+
+The next set of code blocks will run a detached container, find its name and then stop the container. 
+```
+$ docker run --detach=true mynametag sleep 60
+```
+Look under the `NAMES` field and copy the name of the running container. 
+```
+$ docker ps
+```
+Now run:
+```
+$ docker stop [container name]
+$ docker ps
+```
+
+### VOLUME directive
+
+I can't figure out what the `VOL` directive provides that isn't provided by 
+the `--volume` parameter to the `docker run` command. 
+
+```
+$ docker run --interactive --tty=true --volume /Users/david/Downloads:/tmp/Downloads mynametag bash
+```
+
+### EXPOSE directive
+
+This leads into container networking, which should wait for another day. 
+
+See also the documentation for the `Dockerfile`:
+
+- https://docs.docker.com/engine/reference/builder/
+- https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
