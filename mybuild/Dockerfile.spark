@@ -1,0 +1,18 @@
+FROM ubuntu:14.04
+EXPOSE 2181 4040 5000 5001 5002 5003 5004 5005 5050
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E56151BF 
+ENV DISTRO ubuntu
+ENV CODENAME trusty
+RUN echo "deb http://repos.mesosphere.com/${DISTRO} ${CODENAME} main" \
+    | tee /etc/apt/sources.list.d/mesosphere.list 
+RUN apt-get update && apt-get install -y \
+    tar \
+    wget \
+    git \
+    openjdk-7-jdk \
+    mesos 
+ADD spark-1.6.1-bin-cdh4.tgz /
+RUN mv /spark-1.6.1*    /spark
+ADD spark-env.sh        /spark/conf/
+ADD spark-defaults.conf /spark/conf/
+
