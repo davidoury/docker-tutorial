@@ -105,9 +105,18 @@ Find the search field at the top of the page.
 
 ## Building containers 
 
-Set your current directory to the `mybuild` subdirectory of 
-the `docker-tutorial` directory created by the `git clone` command
-and run: 
+Clone this GitHub repository:
+```
+$ git clone https://github.com/davidoury/docker-tutorial.git
+```
+This command created a subdirectory `docker-tutorial` in your current directory. 
+Set your current directory to this subdirectory with:
+```
+$ cd docker-tutorial
+```
+In this directory you will see the `mybuild` subdirectory. 
+Change your current directory to it. 
+Now run:
 ```
 $ ls
 $ cat Dockerfile
