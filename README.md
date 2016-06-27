@@ -1,10 +1,12 @@
 # Docker tutorial
 
-Install Docker as appropriate for your system. 
+Install Docker on your system. 
 
 > https://docs.docker.com/engine/installation/
 
 ## Starting Docker
+
+This section has three subsections for each platform: Mac, Windows, Linux.
 
 ### Starting Docker on a Mac
 
@@ -18,9 +20,9 @@ The first command starts (and creates if necessary) a virtual machine named `def
 on which Docker containers will be run. 
 The second line sets up the shell environment (you are currently using) 
 to run `docker` commands on the `default` virtual machine.
-Both commands need to be run each time you start Docker in another terminal window. 
+Both commands should be run each time you want to use Docker from a new terminal window. 
 
-You need to know the IP address of the `default` virtual machine
+You will (usually) need to know the IP address of the `default` virtual machine
 in order to use the containers you run there. To obtain its IP address run: 
 ```
 docker-machine ip default
@@ -47,7 +49,7 @@ Would someone that runs Linux email me <david@scatter.com> the startup commands?
 
 ### Hello world
 
-From the same terminal you started, run: 
+From the same terminal in which you started Docker, run: 
 ```
 $ docker run hello-world
 ```
@@ -62,7 +64,6 @@ The output "Hello from Docker." indicates that the container ran correctly.
 Try the command a second time. 
 
 ### CentOS and Ubuntu distributions
-
 
 To create a container with the latest CentOS distribution (7) 
 or the latest Ubuntu distribution (16.04) as of 19 Jun 2016 run:
@@ -81,7 +82,7 @@ can be specified there.
 When you exit the shell the container will stop running 
 and all changes you have made, while using the shell, will vanish. 
 
-The two parameters are required when you are running a shell: 
+These two parameters are required when you are running a shell with Docker: 
 
 - `--tty=true` allocates a pseudo-TTY
 - `--interactive` keeps a standard tty open
@@ -105,11 +106,11 @@ Find the search field at the top of the page.
 
 ## Building containers 
 
-Clone this GitHub repository:
+Clone this GitHub repository with the command:
 ```
 $ git clone https://github.com/davidoury/docker-tutorial.git
 ```
-This command created a subdirectory `docker-tutorial` in your current directory. 
+This command creates a subdirectory `docker-tutorial` in your current directory. 
 Set your current directory to this subdirectory with:
 ```
 $ cd docker-tutorial
@@ -125,7 +126,13 @@ The file `Dockerfile` is used to configure containers (to build).
 Every such file starts with a `FROM` line that specifies the base container. 
 Additional lines add to or modify that base container. 
 
-To start, build a container whose base is `ubuntu:14.04` container with the command:
+To start, create the Dockerfile:
+```
+$ echo "FROM ubuntu:14.04" >  Dockerfile
+$ cat Dockerfile
+```
+
+Build a container whose base is the `ubuntu:14.04` container with the command:
 ```
 $ docker build -t mynametag .
 Sending build context to Docker daemon 3.584 kB
@@ -155,7 +162,6 @@ Images can be deleted with the command:
 ```
 $ docker rmi --force hello-world
 ```
-I've never been able to delete an image without using the `--force` option.
 
 Confirm that this worked as expected with:
 ```
@@ -171,6 +177,7 @@ The use of several Dockerfile directives are described below.
 Run the following to add a command to `Dockerfile`.
 ```
 echo "RUN echo hello > /tmp/world" >> Dockerfile`
+cat Dockerfile
 ```
 Rebuild the image.
 ```
@@ -180,7 +187,7 @@ Run a bash shell in the container
 ```
 $ docker run --interactive --tty=true mynametag bash
 ``` 
-and then check `/tmp/world` and stop the container. 
+and then display the file `/tmp/world` and stop the container. 
 ```
 $ cat /tmp/world
 $ exit
@@ -189,10 +196,12 @@ $ exit
 ### ENV directive 
 
 You can create and access environment variables.
-Add two more commands to `Dockerfile`.
+Add three more commands to `Dockerfile`.
 ```
-echo "ENV MYFILE /tmp/world" >> Dockerfile
-echo 'RUN mv "${MYFILE}" /tmp/world.save' >> Dockerfile
+echo "ENV OLDFILE /tmp/world"     >> Dockerfile
+echo "ENV NEWFILE /tmp/world.new" >> Dockerfile
+echo 'RUN mv "${OLDFILE}" "${NEWFILE}' >> Dockerfile
+cat Dockerfile
 ```
 Rebuild the image and run bash in the container.
 ```
@@ -207,11 +216,13 @@ $ exit
 
 ### ADD directive
 
-Files can be moved from the build directory (currently `mybuild`) into the container filesystem.
-Add these two commands to `Dockerfile`, build and then run the image. 
+Files can be moved from the build directory (currently `mybuild`) 
+into the container filesystem.
+Add these two commands to `Dockerfile`, then build and run the image. 
 ```
-$ echo "ADD testdir.tgz /tmp" >> Dockerfile
+$ echo "ADD testdir.tgz   /tmp" >> Dockerfile
 $ echo "ADD testdir/file1 /tmp" >> Dockerfile
+$ cat Dockerfile
 $ docker build -t mynametag .
 $ docker run --interactive --tty=true mynametag bash
 ```
@@ -223,10 +234,12 @@ $ exit
 
 ### CMD directive, detached containers, stopping containers
 
-The `CMD` directive provides a default command to run if none is specified. 
+The `CMD` directive provides a default command to be run, 
+if none is specified, when the container is started.
 Add this command to `Dockerfile` and rebuild the container.
 ```
 $ echo "CMD sleep 10; ls /tmp" >> Dockerfile
+$ cat Dockerfile
 $ docker build -t mynametag .
 ```
 Now run the container, omitting the `--interactive` and `--tty` parameters.
@@ -239,12 +252,15 @@ Then immediately run the `docker ps` command.
 $ docker run --detach=true mynametag 
 $ docker ps
 ```
+Notice that the container is running. 
 
-The next set of code blocks will run a detached container, find its name and then stop the container. 
+The next three code blocks will run a detached container, 
+find its name and then stop the container. 
 ```
 $ docker run --detach=true mynametag sleep 60
 ```
-Look under the `NAMES` field and copy the name of the running container. 
+Run the following command, then look under the `NAMES` field 
+and copy the name of the running container. 
 ```
 $ docker ps
 ```
@@ -256,12 +272,54 @@ $ docker ps
 
 ### VOLUME directive
 
-I can't figure out what the `VOL` directive provides that isn't provided by 
-the `--volume` parameter to the `docker run` command. 
+Volumes are the Docker method for saving data outside of a container.
 
+Create a new Dockerfile.
 ```
-$ docker run --interactive --tty=true --volume /Users/david/Downloads:/tmp/Downloads mynametag bash
+$ echo "FROM ubuntu:14.04" >  Dockerfile
+$ echo "VOLUME /work"      >> Dockerfile
+$ cat Dockerfile
 ```
+
+Create a Docker container that contains persistent data in directory `/work`.
+```
+docker create --volume /work --name datacontainer mynametag
+```
+Note that the container is not running.
+```
+$ docker ps
+```
+
+Run the `mynametag` container and use the `/work` directory from `datacontainer`.
+```
+$ docker run -ti --volume /work --volumes-from datacontainer mynametag bash
+```
+From the container shell type:
+```
+$ echo sdf > /work/lkj
+$ exit
+```
+
+Run the `mynametag` container
+```
+$ docker run -ti -v /work --volumes-from datacontainer mynametag bash
+```
+and check for the file we placed there:
+```
+$ cat /work/lkj
+$ exit
+```
+
+Run: 
+```
+$ docker ps --all | grep datacontainer
+```
+Remove the container:
+```
+$ docker rm datacontainer
+$ docker ps --all | grep datacontainer
+```
+
 
 ### EXPOSE directive
 
