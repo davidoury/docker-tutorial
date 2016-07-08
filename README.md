@@ -47,6 +47,22 @@ Would someone that runs Linux email me <david@scatter.com> the startup commands?
 
 ## Running containers
 
+There two types of entities that are essential to Docker: images and containers.
+
+1. An _image_ is (sort of) a _non-running_ linux system 
+   with the minimum of files and libraries required to run a single task.
+   An image is a analogous to an executable program file. 
+1. A _container_ is (sort of) a _running_ linux system 
+   with the minimum of files and libraries required to run a single task. 
+   A container is analogous to a running process. 
+
+Many many images are available at 
+
+> https://hub.docker.com
+
+They can be run locally with the `docker run` command. 
+The next two sections contain basic examples. 
+
 ### Hello world
 
 From the same terminal in which you started Docker, run: 
@@ -58,10 +74,11 @@ Notice, unless you have run this command already, the first two lines of output:
 Unable to find image 'hello-world:latest' locally
 latest: Pulling from library/hello-world
 ```
-which indicates that Docker does not have the `hello-world` container in cache 
+indicate that Docker does not have the `hello-world` image in cache 
 and will download the latest version. 
 The output "Hello from Docker." indicates that the container ran correctly. 
-Try the command a second time. 
+Try the command a second time and notice the Docker is able to find the
+image locally. 
 
 ### CentOS and Ubuntu distributions
 
@@ -80,9 +97,9 @@ Any valid command on the CentOS/Ubuntu system
 can be specified there.
 
 When you exit the shell the container will stop running 
-and all changes you have made, while using the shell, will vanish. 
+and __all changes you have made to the container will vanish__.
 
-These two parameters are required when you are running a shell with Docker: 
+Two parameters are required when you are running a shell with Docker: 
 
 - `--tty=true` allocates a pseudo-TTY
 - `--interactive` keeps a standard tty open
@@ -95,21 +112,18 @@ See the documentation:
 - https://docs.docker.com/v1.8/reference/commandline/run/
 - https://docs.docker.com/engine/reference/run/
 
-
-## Docker Hub
-
-Many containers are available on the Docker Hub. See 
-
-> https://hub.docker.com
-
-Find the search field at the top of the page. 
-
 ## Building containers 
 
-Clone this GitHub repository with the command:
+In addition to being able to run containers whose images are stored 
+in the public Docker repository https://hub.docker.com, 
+you can configure and build your own images based on images
+from the repository. 
+
+To get started, run this command
 ```
 $ git clone https://github.com/davidoury/docker-tutorial.git
 ```
+to clone this GitHub repository. 
 This command creates a subdirectory `docker-tutorial` in your current directory. 
 Set your current directory to this subdirectory with:
 ```
@@ -122,15 +136,16 @@ Now run:
 $ ls
 $ cat Dockerfile
 ```
-The file `Dockerfile` is used to configure containers (to build). 
+The file `Dockerfile` is used to configure images (to build). 
 Every such file starts with a `FROM` line that specifies the base container. 
 Additional lines add to or modify that base container. 
 
-To start, create the Dockerfile:
+To start, recreate the Dockerfile:
 ```
 $ echo "FROM ubuntu:14.04" >  Dockerfile
 $ cat Dockerfile
 ```
+Note that the ">" creates a new file named `Dockerfile`.
 
 Build a container whose base is the `ubuntu:14.04` container with the command:
 ```
@@ -172,11 +187,15 @@ $ docker images
 
 The use of several Dockerfile directives are described below. 
 
+See 
+
+- https://docs.docker.com/engine/reference/builder/
+
 ### RUN directive
 
 Run the following to add a command to `Dockerfile`.
 ```
-echo "RUN echo hello > /tmp/world" >> Dockerfile`
+echo "RUN echo hello > /tmp/world" >> Dockerfile
 cat Dockerfile
 ```
 Rebuild the image.
@@ -281,44 +300,71 @@ $ echo "VOLUME /work"      >> Dockerfile
 $ cat Dockerfile
 ```
 
-Create a Docker container that contains persistent data in directory `/work`.
+First, rebuild the `mynametag` image.
 ```
-docker create --volume /work --name datacontainer mynametag
+$ docker build -t mynametag .
+```
+
+Now, create a Docker container that contains persistent data in directory `/work`.
+```
+docker create --name mydc mynametag
+```
+
+You may also add a volume (`/play`) that was not specified with the `VOLUME` directive. 
+```
+docker create --volume /play --name mydc mynametag
 ```
 Note that the container is not running.
 ```
 $ docker ps
 ```
 
-Run the `mynametag` container and use the `/work` directory from `datacontainer`.
+Run the `mynametag` container and add a file to the `/work` and `/play` directories from `mydc`.
 ```
-$ docker run -ti --volume /work --volumes-from datacontainer mynametag bash
+$ docker run -ti --volumes-from mydc mynametag bash
 ```
 From the container shell type:
 ```
 $ echo sdf > /work/lkj
+$ echo sdf > /play/lkj
 $ exit
 ```
 
 Run the `mynametag` container
 ```
-$ docker run -ti -v /work --volumes-from datacontainer mynametag bash
+$ docker run -ti --volumes-from mydc mynametag bash
 ```
-and check for the file we placed there:
+and check for the files we placed there:
 ```
 $ cat /work/lkj
+$ cat /play/lkj
 $ exit
 ```
 
-Run: 
+The `mydc` container is not running, but is listed by `ps` with the `--all` parameter.
 ```
-$ docker ps --all | grep datacontainer
+$ docker ps --all | grep mydc
 ```
 Remove the container:
 ```
-$ docker rm datacontainer
-$ docker ps --all | grep datacontainer
+$ docker rm --volumes mydc
+$ docker ps --all | grep mydc
 ```
+The `--volumes` parameter removes the volumes associated with the container. 
+Otherwise the volumes remain when the container is deleted. I have not yet tested this. 
+
+An easy way to create a persistent directory inside a container is to 
+associate/mirror it with a directory on the host.
+```
+$ docker run -ti --volume /Users/david/Downloads:/downloads ubuntu bash
+```
+
+
+
+See also 
+
+- https://docs.docker.com/engine/tutorials/dockervolumes/
+- https://docs.docker.com/engine/reference/commandline/rm/
 
 
 ### EXPOSE directive
@@ -329,3 +375,21 @@ See also the documentation for the `Dockerfile`:
 
 - https://docs.docker.com/engine/reference/builder/
 - https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
+
+# Docker networking
+
+# Docker Hub 
+
+## Command: docker pull
+
+## Command: docker push
+
+Many containers are available on the Docker Hub. See 
+
+> https://hub.docker.com
+
+Find the search field at the top of the page. 
+
+# See also
+
+https://docs.docker.com/engine/reference/commandline/create/
