@@ -374,13 +374,12 @@ See also
 
 ### EXPOSE directive
 
-https://docs.docker.com/v1.11/engine/userguide/networking/dockernetworks/
-See also the documentation for the `Dockerfile`:
+The `EXPOSE` directive _informs Docker that the container
+listens on the specified ports at runtime_. See 
 
-- https://docs.docker.com/engine/reference/builder/
-- https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
+- https://docs.docker.com/engine/reference/builder/#/expose
 
-# Docker networking
+See the section on Docker networking below.
 
 # Docker Hub 
 
@@ -426,6 +425,64 @@ To delete an image, login to Docker Hub,
 select `Details` for the image to delete, 
 then select "Settings". 
 
-# See also
+# Docker networking
 
-https://docs.docker.com/engine/reference/commandline/create/
+- https://docs.docker.com/v1.11/engine/userguide/networking/dockernetworks/
+
+There are two types of networks available from Docker: bridge and host. 
+```
+$ docker network ls
+```
+I think it goes like this,
+
+- A container placed on the `host` network is added to the hosts network stack.
+- The bridge network connects the host's network stack to container's network stack. 
+
+Add the install commands to add networking tools to the `mynametag` image. 
+```
+echo "FROM ubuntu:14.04"                     >  Dockerfile
+echo "RUN apt-get update -y"                 >> Dockerfile
+echo "RUN apt-get install net-tools -y"      >> Dockerfile
+echo "RUN apt-get install inetutils-ping -y" >> Dockerfile
+cat Dockerfile
+```
+
+Rebuild the `mynametag` image.
+```
+docker build -t mynametag .
+```
+Now, login to the container.
+```
+docker run -ti --net bridge mynametag bash
+```
+Open another terminal windows, on your computer, and setup Docker in that shell.
+```
+eval $(docker-machine env default)
+```
+Login to a second container (in the second terminal window).
+```
+docker run -ti --net bridge mynametag bash
+```
+From each terminal/container/shell run the command
+```
+ifconfig
+```
+Notice the containers are on the same network. 
+
+The containers can `ping` each other. For instance, 
+```
+ping 172.17.0.3
+```
+They can also ping outside IP addresses, including the host (your laptop). 
+
+The default is `--net bridge` (and so this command could have been omitted above).
+
+The other option is `--net host`. Try 
+```
+docker run -ti --net host mynametag bash
+```
+
+Run this command from the container
+```
+ifconfig
+```
