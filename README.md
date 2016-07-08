@@ -190,6 +190,8 @@ The use of several Dockerfile directives are described below.
 See 
 
 - https://docs.docker.com/engine/reference/builder/
+- https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
+
 
 ### RUN directive
 
@@ -356,9 +358,12 @@ Otherwise the volumes remain when the container is deleted. I have not yet teste
 An easy way to create a persistent directory inside a container is to 
 associate/mirror it with a directory on the host.
 ```
-$ docker run -ti --volume /Users/david/Downloads:/downloads ubuntu bash
+$ docker run -ti --volume /tmp:/tempfiles ubuntu bash
 ```
-
+From within the containers shell run:
+```
+ls /tempfiles
+```
 
 
 See also 
@@ -369,8 +374,7 @@ See also
 
 ### EXPOSE directive
 
-This leads into container networking, which should wait for another day. 
-
+https://docs.docker.com/v1.11/engine/userguide/networking/dockernetworks/
 See also the documentation for the `Dockerfile`:
 
 - https://docs.docker.com/engine/reference/builder/
@@ -380,15 +384,47 @@ See also the documentation for the `Dockerfile`:
 
 # Docker Hub 
 
-## Command: docker pull
-
-## Command: docker push
-
-Many containers are available on the Docker Hub. See 
+Docker Hub is a searchable repository of Docker images. See
 
 > https://hub.docker.com
 
 Find the search field at the top of the page. 
+You can also search from the command line, but first login
+```
+docker login
+```
+
+Now search for R images:
+```
+docker search R
+```
+
+For more info on the Docker repository see:
+
+- https://docs.docker.com/engine/tutorials/dockerrepos/
+
+## Command: docker pull
+
+Images can be downloaded (pulled) from Docker Hub 
+and stored in your local machine. 
+```
+docker pull r-base
+```
+
+## Command: docker push
+
+First, build `davidoury/mynametag`
+```
+docker build davidoury/mynametag .
+```
+Now, push this image to Docker Hub
+```
+docker push davidoury/mynametag
+```
+
+To delete an image, login to Docker Hub, 
+select `Details` for the image to delete, 
+then select "Settings". 
 
 # See also
 
