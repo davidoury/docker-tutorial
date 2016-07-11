@@ -503,17 +503,27 @@ then select "Settings".
 
 - https://docs.docker.com/v1.11/engine/userguide/networking/dockernetworks/
 
-There are two types of networks available from Docker: bridge and host. 
+There are two types of networks available from Docker: _bridge_ and _host_. 
 ```
 $ docker network ls
 ```
 I think it goes like this,
 
 - A container placed on the `host` network has its interface added to the hosts network stack.
-- The bridge network connects the host's network stack to the container's network stack. 
-  The container's interface is added to the bridge network.
+- The bridge network connects (an interface in) the host's network stack 
+  to (an interface in) the container's network stack. 
 
-First, ssh into (run a shell in) the `default` Docker machine.
+First let's look at the host network.
+```
+docker run -ti --net host ubuntu:14.04 bash
+```
+Look at the interfaces and routing.
+```
+$ ifconfig 
+$ route
+```
+
+Now, ssh into (run a shell in) the `default` Docker machine.
 ```
 $ docker-machine ssh default
 ```
@@ -522,8 +532,9 @@ Look at the interfaces and routing.
 $ ifconfig 
 $ route
 ```
-Notice that 172.17.0.0/16 is sent to `docker0` (172.17.0.1).
-We'll get back to this information in a moment. 
+Notice that they are identical. 
+
+
 
 Add the install commands that add networking tools to the `mynametag` image. 
 ```
@@ -534,13 +545,9 @@ $ echo "RUN apt-get install inetutils-ping -y" >> Dockerfile
 $ cat Dockerfile
 ```
 
-Build the `mynametag` image.
+Login to the container.
 ```
-$ docker build -t mynametag .
-```
-Now, login to the container.
-```
-$ docker run -ti --net bridge mynametag bash
+$ docker run -ti --net bridge ubuntu:14.04 bash
 ```
 Check the interfaces and routing.
 ```
@@ -550,15 +557,17 @@ $ route
 Interface `eth0` of the container and interface `docker0` 
 of the docker machine are in the bridge network. 
 
-Parameter `--net bridge` is a default for the `docker run` command
-(and so this parameter could have been omitted above).
-
-Another parameter option is `--net host`. Try 
+Login to the `default` Docker machine.
 ```
-docker run -ti --net host mynametag bash
+$ docker-machine ssh default
 ```
-Now check the interfaces and routing as above.
-Notice that the interfaces are identical to those of the docker machine `default`.
+Check the interfaces and routing.
+```
+$ ifconfig
+$ route
+$ exit
+```
+Look for `docker0`, `eth0` and `eth1`.
 
 Display details of the `bridge` network.
 ```
@@ -583,7 +592,7 @@ $ docker inspect [container name]
 and look at the `NetworkSettings` section at the end. 
 Notice the container's IP address and the gateway IP address.
 
-Now, I'll setup another bridge network and connect a container to it.
+Now, I'll setup another bridge network called `mynet` and connect a container to it.
 
 ```
 $ docker network create -d bridge mynet
