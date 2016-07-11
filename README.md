@@ -13,19 +13,20 @@ This section has three subsections for each platform: Mac, Windows, Linux.
 Docker can be started on a Mac
 from a shell (opened with a terminal program) as follows:
 ```
-docker-machine start default
-eval $(docker-machine env default)
+$ docker-machine start default
+$ eval $(docker-machine env default)
 ```
 The first command starts (and creates if necessary) a virtual machine named `default`
 on which Docker containers will be run. 
 The second line sets up the shell environment (you are currently using) 
 to run `docker` commands on the `default` virtual machine.
-Both commands should be run each time you want to use Docker from a new terminal window. 
+This second command should be run when you interact with the Docker
+daemon from another terminal window (shell). 
 
 You will (usually) need to know the IP address of the `default` virtual machine
 in order to use the containers you run there. To obtain its IP address run: 
 ```
-docker-machine ip default
+$ docker-machine ip default
 ```
 
 For details on the `docker-machine` command see:
@@ -62,6 +63,10 @@ Many many images are available at
 
 They can be run locally with the `docker run` command. 
 The next two sections contain basic examples. 
+
+For details of the `docker run` command see
+
+- https://docs.docker.com/engine/reference/commandline/run/
 
 ### Hello world
 
@@ -134,7 +139,6 @@ Change your current directory to it.
 Now run:
 ```
 $ ls
-$ cat Dockerfile
 ```
 The file `Dockerfile` is used to configure images (to build). 
 Every such file starts with a `FROM` line that specifies the base container. 
@@ -145,7 +149,10 @@ To start, recreate the Dockerfile:
 $ echo "FROM ubuntu:14.04" >  Dockerfile
 $ cat Dockerfile
 ```
-Note that the ">" creates a new file named `Dockerfile`.
+Note that `echo` command with the redirection ">" 
+creates a new file named `Dockerfile`
+whose first line is  "FROM ubuntu:14.04" (without the quotes).
+The redirection ">>" (which you will see below) appends the string to the file. 
 
 Build a container whose base is the `ubuntu:14.04` container with the command:
 ```
@@ -197,8 +204,8 @@ See
 
 Run the following to add a command to `Dockerfile`.
 ```
-echo "RUN echo hello > /tmp/world" >> Dockerfile
-cat Dockerfile
+$ echo "RUN echo hello > /tmp/world" >> Dockerfile
+$ cat Dockerfile
 ```
 Rebuild the image.
 ```
@@ -219,10 +226,10 @@ $ exit
 You can create and access environment variables.
 Add three more commands to `Dockerfile`.
 ```
-echo "ENV OLDFILE /tmp/world"     >> Dockerfile
-echo "ENV NEWFILE /tmp/world.new" >> Dockerfile
-echo 'RUN mv "${OLDFILE}" "${NEWFILE}' >> Dockerfile
-cat Dockerfile
+$ echo "ENV OLDFILE /tmp/world"     >> Dockerfile
+$ echo "ENV NEWFILE /tmp/world.new" >> Dockerfile
+$ echo 'RUN mv "${OLDFILE}" "${NEWFILE}' >> Dockerfile
+$ cat Dockerfile
 ```
 Rebuild the image and run bash in the container.
 ```
@@ -307,21 +314,24 @@ First, rebuild the `mynametag` image.
 $ docker build -t mynametag .
 ```
 
-Now, create a Docker container that contains persistent data in directory `/work`.
+Now, create a Docker data container called `mydc` 
+that contains persistent data in directory `/work`.
 ```
-docker create --name mydc mynametag
+$ docker create --name mydc mynametag
 ```
 
-You may also add a volume (`/play`) that was not specified with the `VOLUME` directive. 
+Now, create the `mydc` data container, but also add a volume (`/play`) 
+that was not specified with the `VOLUME` directive. 
 ```
-docker create --volume /play --name mydc mynametag
+$ docker create --volume /play --name mydc mynametag
 ```
 Note that the container is not running.
 ```
 $ docker ps
 ```
 
-Run the `mynametag` container and add a file to the `/work` and `/play` directories from `mydc`.
+Run the `mynametag` container with volumes from the `mydc` data container
+and add a file to the `/work` and `/play` directories (from `mydc`).
 ```
 $ docker run -ti --volumes-from mydc mynametag bash
 ```
@@ -332,7 +342,7 @@ $ echo sdf > /play/lkj
 $ exit
 ```
 
-Run the `mynametag` container
+Run the `mynametag` container (with volumes from the `mydc` container)
 ```
 $ docker run -ti --volumes-from mydc mynametag bash
 ```
@@ -356,15 +366,16 @@ The `--volumes` parameter removes the volumes associated with the container.
 Otherwise the volumes remain when the container is deleted. I have not yet tested this. 
 
 An easy way to create a persistent directory inside a container is to 
-associate/mirror it with a directory on the host.
+sync/mirror it with a directory on the host.
 ```
 $ docker run -ti --volume /tmp:/tempfiles ubuntu bash
 ```
 From within the containers shell run:
 ```
-ls /tempfiles
+$ ls /tempfiles
 ```
-
+This is not a best practice (good idea) as it does not scale well
+and makes your container dependent on your local host file system. 
 
 See also 
 
@@ -374,12 +385,75 @@ See also
 
 ### EXPOSE directive
 
-The `EXPOSE` directive _informs Docker that the container
-listens on the specified ports at runtime_. See 
+The `EXPOSE` directive _informs_ Docker that the container
+listens on the specified ports at runtime. See 
 
 - https://docs.docker.com/engine/reference/builder/#/expose
 
-See the section on Docker networking below.
+As far as I can tell, the directive doesn't have any effect and is
+more like documentation. We'll see. 
+Let me know at <doury@bentley.edu> if you determine otherwise. 
+
+The examples from this section come from:
+
+- https://hub.docker.com/_/nginx/
+
+Create a new Dockerfile.
+```
+$ echo "FROM ubuntu:14.04" >  Dockerfile
+$ echo "RUN apt-get update && apt-get install nginx -y" >> Dockerfile
+$ cat Dockerfile
+```
+A single `RUN` command with two commands is more efficient than two `RUN` commands. 
+
+Build the `mynametag` image.
+```
+$ docker build -t mynametag .
+```
+Run a shell in the container.
+```
+$ docker run -ti mynametag bash
+```
+Run nginx and install Curl in the container.
+```
+$ nginx
+$ apt-get install curl -y -qq
+```
+Check that nginx is running and request a web page.
+```
+$ netstat -atnp
+$ curl http://localhost/
+```
+
+The container has an IP, but it is different than the IP of the 
+`default` docker machine (virtualbox).
+Next we'll setup port forwarding from the `default` Docker machine
+to the container. 
+Exit the container.
+```
+$ exit
+```
+Start the container, but forward port 8080 on the `default` Docker machine
+to port 80 on the container. 
+```
+$ docker run -ti --publish 8080:80 mynametag bash
+```
+Multiple ports can be forwarded with multiple `--publish parameters.
+
+Run nginx.
+```
+$ nginx
+```
+From the host (your computer) get the web page.
+```
+$ curl http://192.168.99.100:8080/
+```
+Your IP address may differ. 
+If the above command doesn't work then check it with
+```
+docker-machine ip default
+```
+See also the section titled _Docker Networking_ below.
 
 # Docker Hub 
 
@@ -435,54 +509,98 @@ $ docker network ls
 ```
 I think it goes like this,
 
-- A container placed on the `host` network is added to the hosts network stack.
-- The bridge network connects the host's network stack to container's network stack. 
+- A container placed on the `host` network has its interface added to the hosts network stack.
+- The bridge network connects the host's network stack to the container's network stack. 
+  The container's interface is added to the bridge network.
 
-Add the install commands to add networking tools to the `mynametag` image. 
+First, ssh into (run a shell in) the `default` Docker machine.
 ```
-echo "FROM ubuntu:14.04"                     >  Dockerfile
-echo "RUN apt-get update -y"                 >> Dockerfile
-echo "RUN apt-get install net-tools -y"      >> Dockerfile
-echo "RUN apt-get install inetutils-ping -y" >> Dockerfile
-cat Dockerfile
+$ docker-machine ssh default
+```
+Look at the interfaces and routing.
+```
+$ ifconfig 
+$ route
+```
+Notice that 172.17.0.0/16 is sent to `docker0` (172.17.0.1).
+We'll get back to this information in a moment. 
+
+Add the install commands that add networking tools to the `mynametag` image. 
+```
+$ echo "FROM ubuntu:14.04"                     >  Dockerfile
+$ echo "RUN apt-get update -y"                 >> Dockerfile
+$ echo "RUN apt-get install net-tools -y"      >> Dockerfile
+$ echo "RUN apt-get install inetutils-ping -y" >> Dockerfile
+$ cat Dockerfile
 ```
 
-Rebuild the `mynametag` image.
+Build the `mynametag` image.
 ```
-docker build -t mynametag .
+$ docker build -t mynametag .
 ```
 Now, login to the container.
 ```
-docker run -ti --net bridge mynametag bash
+$ docker run -ti --net bridge mynametag bash
 ```
-Open another terminal windows, on your computer, and setup Docker in that shell.
+Check the interfaces and routing.
 ```
-eval $(docker-machine env default)
+$ ifconfig
+$ route
 ```
-Login to a second container (in the second terminal window).
-```
-docker run -ti --net bridge mynametag bash
-```
-From each terminal/container/shell run the command
-```
-ifconfig
-```
-Notice the containers are on the same network. 
+Interface `eth0` of the container and interface `docker0` 
+of the docker machine are in the bridge network. 
 
-The containers can `ping` each other. For instance, 
-```
-ping 172.17.0.3
-```
-They can also ping outside IP addresses, including the host (your laptop). 
+Parameter `--net bridge` is a default for the `docker run` command
+(and so this parameter could have been omitted above).
 
-The default is `--net bridge` (and so this command could have been omitted above).
-
-The other option is `--net host`. Try 
+Another parameter option is `--net host`. Try 
 ```
 docker run -ti --net host mynametag bash
 ```
+Now check the interfaces and routing as above.
+Notice that the interfaces are identical to those of the docker machine `default`.
 
-Run this command from the container
+Display details of the `bridge` network.
 ```
-ifconfig
+$ docker network inspect bridge
+```
+
+Run a shell in the `mynametag` container.
+```
+$ docker run -it mynametag bash
+```
+In a different terminal window:
+```
+$ eval $(docker-machine env default)
+$ docker ps
+```
+and copy the name of the running container. 
+
+Now inspect the container:
+```
+$ docker inspect [container name]
+```
+and look at the `NetworkSettings` section at the end. 
+Notice the container's IP address and the gateway IP address.
+
+Now, I'll setup another bridge network and connect a container to it.
+
+```
+$ docker network create -d bridge mynet
+$ docker run -d -ti --net=mynet ubuntu:14.04 bash
+```
+Inside the container run 
+```
+$ ifconfig
+$ exit
+```
+Now run the run these containers as a daemon in the background. 
+```
+$ docker run -d -ti --net=mynet ubuntu:14.04 sleep 60 &
+$ docker run -d -ti --net=mynet ubuntu:14.04 sleep 60 &
+$ docker run -d -ti --net=mynet ubuntu:14.04 sleep 60 &
+```
+Then inspect the network. 
+```
+$ docker network inspect mynet
 ```
