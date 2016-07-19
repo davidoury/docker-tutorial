@@ -228,7 +228,7 @@ Add three more commands to `Dockerfile`.
 ```
 $ echo "ENV OLDFILE /tmp/world"     >> Dockerfile
 $ echo "ENV NEWFILE /tmp/world.new" >> Dockerfile
-$ echo 'RUN mv "${OLDFILE}" "${NEWFILE}' >> Dockerfile
+$ echo 'RUN mv "${OLDFILE}" "${NEWFILE}"' >> Dockerfile
 $ cat Dockerfile
 ```
 Rebuild the image and run bash in the container.

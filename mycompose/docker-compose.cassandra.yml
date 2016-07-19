@@ -1,0 +1,25 @@
+version: '2'
+services:
+  seed:
+    image: cassandra
+    mem_limit: 1g
+    networks: 
+      - mynet
+    environment:
+      - MAX_HEAP_SIZE=768m
+      - HEAP_NEWSIZE=512m
+  nonseed: 
+    image: cassandra 
+    mem_limit: 2g
+    networks: 
+    - mynet
+    links:
+      - seed
+    environment:
+      - CASSANDRA_SEEDS=seed # unnecessary
+      - MAX_HEAP_SIZE=512m
+      - HEAP_NEWSIZE=256m
+
+networks:
+  mynet:
+    driver: bridge

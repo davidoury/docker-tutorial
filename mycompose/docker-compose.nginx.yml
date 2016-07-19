@@ -1,0 +1,21 @@
+version: '2'
+services:
+  nginx:
+    image: nginx
+    ports:
+    - "80"
+    networks: 
+      - mynet
+    volumes:
+    - /Users/david/GitHub/docker-tutorial/mycompose:/usr/share/nginx/html:ro
+  ubuntu: 
+    image: sdf
+    command: curl http://nginx:80/index.html
+    links: 
+    - nginx
+    networks: 
+    - mynet
+
+networks:
+  mynet:
+    driver: bridge
