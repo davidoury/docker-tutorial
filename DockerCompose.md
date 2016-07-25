@@ -30,16 +30,16 @@ services:
     - /Users/david/GitHub/docker-tutorial/mycompose:/usr/share/nginx/html:ro
   ubuntu:
     image: myubuntu
-    command: curl http://nginx:80/index.html
+    command: curl -s http://nginx:80/index.html
     networks:
     - mynet
-    links:
-    - nginx
 
 networks:
   mynet:
 ```
+Key items to notice: images, commands, networks, ports and volumes.
 
+Now create and run the services (containers).
 ```
 docker-compose -f docker-compose.nginx.yml up
 ```
@@ -48,12 +48,13 @@ From another terminal window:
 docker-compose -f docker-compose.nginx.yml ps
 curl 0.0.0.0:[host port]
 ```
+Find `[host port]` in the output of the `ps` command.
 
 ```
 docker-compose -f docker-compose.nginx.yml down
 ```
 
-Now change `"80"` to `"8080:80"` then run `docker-compose ... up`, `ps` and `curl`.
+Now change `"80"` to `"8080:80"` then run `docker-compose ... up`, `docker-compose ... ps` and `curl`.
 
 ## Cassandra cluster
 
@@ -85,19 +86,24 @@ networks:
   mynet:
     driver: bridge
 ```
+Key items to notice: `mem_limit`, `environment` and the `seed` hostname/service.
 
+Create and run the services (containers).
 ```
 docker-compose -f docker-compose.cassandra.yml up
 ```
 
+From another terminal shell:
 ```
 docker-compose -f docker-compose.cassandra.yml ps
 ```
 
+Run a bash shell in the seed container. 
 ```
 docker-compose -f docker-compose.cassandra.yml exec seed bash
 ```
 
+From the container shell run:
 ```
 nodetool -h localhost status
 exit
