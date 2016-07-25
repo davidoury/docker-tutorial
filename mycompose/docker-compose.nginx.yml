@@ -5,16 +5,14 @@ services:
     ports:
     - "80"
     networks: 
-      - mynet
+    - mynet
     volumes:
     - /Users/david/GitHub/docker-tutorial/mycompose:/usr/share/nginx/html:ro
   ubuntu: 
-    image: sdf
-    command: curl http://nginx:80/index.html
+    image: myubuntu
+    command: curl -s http://nginx:80/index.html
     networks: 
     - mynet
-    links: 
-    - nginx
 
 networks:
   mynet:

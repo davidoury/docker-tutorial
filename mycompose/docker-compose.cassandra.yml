@@ -13,10 +13,8 @@ services:
     mem_limit: 2g
     networks: 
     - mynet
-    links:
-      - seed
     environment:
-      - CASSANDRA_SEEDS=seed # unnecessary
+      - CASSANDRA_SEEDS=seed 
       - MAX_HEAP_SIZE=512m
       - HEAP_NEWSIZE=256m
 
