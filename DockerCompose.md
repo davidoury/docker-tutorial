@@ -109,7 +109,7 @@ nodetool -h localhost status
 exit
 ```
 
-Control-C in log window where you run `docker-compose ... up`.
+Control-C in terminal window where you ran `docker-compose ... up`.
 ```
 docker-compose -f docker-compose.cassandra.yml ps
 ```
