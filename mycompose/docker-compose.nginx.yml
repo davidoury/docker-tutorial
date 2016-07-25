@@ -11,10 +11,10 @@ services:
   ubuntu: 
     image: sdf
     command: curl http://nginx:80/index.html
-    links: 
-    - nginx
     networks: 
     - mynet
+    links: 
+    - nginx
 
 networks:
   mynet:
