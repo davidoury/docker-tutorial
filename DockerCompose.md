@@ -7,10 +7,12 @@
 
 > https://hub.docker.com/_/ubuntu/
 
-Build an Ubuntu container for use in the nginx docker compose. 
+Build an Ubuntu container for use in the nginx docker compose.
 ```
 docker build -f Dockerfile.ubuntu --tag myubuntu .
 ```
+
+TEST
 
 ## Nginx
 
@@ -78,7 +80,7 @@ services:
     networks:
     - mynet
     environment:
-      - CASSANDRA_SEEDS=seed 
+      - CASSANDRA_SEEDS=seed
       - MAX_HEAP_SIZE=512m
       - HEAP_NEWSIZE=256m
 
@@ -98,7 +100,7 @@ From another terminal shell:
 docker-compose -f docker-compose.cassandra.yml ps
 ```
 
-Run a bash shell in the seed container. 
+Run a bash shell in the seed container.
 ```
 docker-compose -f docker-compose.cassandra.yml exec seed bash
 ```
